@@ -11,139 +11,171 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 /**
  *
- * @author Hardik
+ * @author Hardik Trivedi 
+ * NetId: hpt150030
  */
 public class ID3Algorithm {
 
     public static final String currentDirectory = System.getProperty("user.dir");
-    public static final String dataSet1TrainingDataFileName = "dataset_1_training_set.csv";
-    public static final String dataset1ValidationDataFileName = "dataset_1_validation_set.csv";
-    public static final String dataset1TestDataFileName = "dataset_1_test_set.csv";
-    public static final String dataSet2TrainingDataFileName = "dataset_2_training_set.csv";
-    public static final String dataset2ValidationDataFileName = "dataset_2_validation_set.csv";
-    public static final String dataset2TestDataFileName = "dataset_2_test_set.csv";
-    public static final String dayDataFileName = "day_set.csv";
-    private static DataTable data;
+    private static DataTable trainingData, validationData, testingData;
     public static final String POSITIVE_INPUT = "1";
     public static final String NEGATIVE_INPUT = "0";
     public static final String CLASS_ATTRIBUTE_NAME = "Class";
 
     public static void main(String[] args) {
 
+        if (args.length < 6) {
+            System.out.println("Some of the parameters seem to be missing. Please check the README.txt file for details and try again.");
+            return;
+        }
+
+        int l = 0;
         try {
-            //Reading from the CSV File
-            BufferedReader csvReader = new BufferedReader(new FileReader(new File(currentDirectory + "/" + dataSet1TrainingDataFileName)));
-            //Reading the attribute Names
+            l = Integer.parseInt(args[0]);
+        } catch (Exception e) {
+            System.out.println("It seems that the value of 'L' cannot be parsed to an integer. Please check the value and try again.");
+            return;
+        }
+
+        int k = 0;
+        try {
+            k = Integer.parseInt(args[1]);
+        } catch (Exception e) {
+            System.out.println("It seems that the value of 'K' cannot be parsed to an integer. Please check the value and try again.");
+            return;
+        }
+
+        String trainingSetFileName = args[2];
+        try {
+            BufferedReader csvReader = new BufferedReader(new FileReader(new File(currentDirectory + "/" + trainingSetFileName)));
             String line = csvReader.readLine();
-            data = new DataTable(line.split(","));
-            //Reading the rest of the data
+            trainingData = new DataTable(line.split(","));
             line = csvReader.readLine();
             while (line != null) {
-                if (data.add(line.split(",")) == -1) {
+                if (trainingData.add(line.split(",")) == -1) {
                     throw new IOException();
                 }
                 line = csvReader.readLine();
             }
         } catch (FileNotFoundException ex) {
-            Logger.getLogger(ID3Algorithm.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("It seems that the program is unable to find the training data file. "
+                    + "Make sure that the file is in the same folder as the ID3Algorithm.java file. "
+                    + "Also, just enter the file name and not the entire file path. "
+                    + "Please refer README.txt for more details and try again.");
+            return;
         } catch (IOException ex) {
-            Logger.getLogger(ID3Algorithm.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("It seems that the program is unable to write / read the training data file. "
+                    + "Make sure that the file is in the same folder as the ID3Algorithm.java file. "
+                    + "Also, just enter the file name and not the entire file path. "
+                    + "Please refer README.txt for more details and try again.");
+            return;
         }
-//        data.displayTable();
-//        System.out.println(data.getRecords().size());
+
+        String validationSetFileName = args[3];
+        try {
+            BufferedReader csvReader = new BufferedReader(new FileReader(new File(currentDirectory + "/" + validationSetFileName)));
+            String line = csvReader.readLine();
+            validationData = new DataTable(line.split(","));
+            line = csvReader.readLine();
+            while (line != null) {
+                if (validationData.add(line.split(",")) == -1) {
+                    throw new IOException();
+                }
+                line = csvReader.readLine();
+            }
+        } catch (FileNotFoundException ex) {
+            System.out.println("It seems that the program is unable to find the validation data file. "
+                    + "Make sure that the file is in the same folder as the ID3Algorithm.java file. "
+                    + "Also, just enter the file name and not the entire file path. "
+                    + "Please refer README.txt for more details and try again.");
+            return;
+        } catch (IOException ex) {
+            System.out.println("It seems that the program is unable to write / read the validation data file. "
+                    + "Make sure that the file is in the same folder as the ID3Algorithm.java file. "
+                    + "Also, just enter the file name and not the entire file path. "
+                    + "Please refer README.txt for more details and try again.");
+            return;
+        }
+
+        String testDataFileName = args[4];
+        try {
+            BufferedReader csvReader = new BufferedReader(new FileReader(new File(currentDirectory + "/" + testDataFileName)));
+            String line = csvReader.readLine();
+            testingData = new DataTable(line.split(","));
+            line = csvReader.readLine();
+            while (line != null) {
+                if (testingData.add(line.split(",")) == -1) {
+                    throw new IOException();
+                }
+                line = csvReader.readLine();
+            }
+        } catch (FileNotFoundException ex) {
+            System.out.println("It seems that the program is unable to find the test data file. "
+                    + "Make sure that the file is in the same folder as the ID3Algorithm.java file. "
+                    + "Also, just enter the file name and not the entire file path. "
+                    + "Please refer README.txt for more details and try again.");
+            return;
+        } catch (IOException ex) {
+            System.out.println("It seems that the program is unable to write / read the test data file. "
+                    + "Make sure that the file is in the same folder as the ID3Algorithm.java file. "
+                    + "Also, just enter the file name and not the entire file path. "
+                    + "Please refer README.txt for more details and try again.");
+            return;
+        }
+
+        String toPrintString = args[5];
+        boolean toPrint = true;
+        if (toPrintString.equalsIgnoreCase("no") || toPrintString.equalsIgnoreCase("n")) {
+            toPrint = false;
+        }
 
         ArrayList<String> attributes = new ArrayList<>();
-        for (String attribute : data.getAttributeNames()) {
+        for (String attribute : trainingData.getAttributeNames()) {
             if (!attribute.equals(CLASS_ATTRIBUTE_NAME)) {
                 attributes.add(attribute);
             }
         }
+
         System.out.println("Creating ID3 using Gain heuristic");
-        Node gainHeuristicRootNode = executeAlgorithmForGainHeuristic(data, attributes);
+        Node gainHeuristicRootNode = executeAlgorithmForGainHeuristic(trainingData, attributes);
+        if (toPrint) {
+            System.out.println("Decision Tree using Gain heuristic (Without Pruning)=============================>");
+            displayTree(gainHeuristicRootNode, 0);
+        }
+        System.out.println("Executing pruning for decision tree created using Gain heuristic");
+        Node gainHeuristicRootNodeBest = executePostPruning(l, k, gainHeuristicRootNode, validationData);
+        if (toPrint) {
+            System.out.println("Decision Tree using Gain heuristic (After pruning)=============================>");
+            displayTree(gainHeuristicRootNodeBest, 0);
+        }
+        double gainHeuristicAccuracyBeforePruning = getTreeAccuracy(gainHeuristicRootNode, testingData);
+        System.out.println("Accuracy of the decision tree created usin Gain heuristic before pruning for test data is====>" + gainHeuristicAccuracyBeforePruning);
+        double gainHeuristicAccuracyAfterPruning = getTreeAccuracy(gainHeuristicRootNodeBest, testingData);
+        System.out.println("Accuracy of the decision tree created using Gain heuristic after pruning for test data is====>" + gainHeuristicAccuracyAfterPruning);
+
         System.out.println("Creating ID3 using Variance Impurity Heuristic");
-        Node varianceImpurityRootNode = executeAlgorithmForVarianceImpurityHeuristic(data, attributes);
-
-        System.out.println("Decision Tree for Gain Heuristic=============================>");
-        displayTree(gainHeuristicRootNode, 0);
-//        System.out.println(countNonLeafNodes(gainHeuristicRootNode));
-
-        System.out.println("Decision Tree for Variance Impurity Heuristic=============================>");
-        displayTree(varianceImpurityRootNode, 0);
-//        System.out.println(countNonLeafNodes(varianceImpurityRootNode));
-
-//        displayTree(rootNode, 0);
-        //Pruning the tree
-        //TODO: Input for pruning the tree
-        try {
-            //Reading from the CSV File
-            BufferedReader csvReader = new BufferedReader(new FileReader(new File(currentDirectory + "/" + dataset1ValidationDataFileName)));
-            //Reading the attribute Names
-            String line = csvReader.readLine();
-            data = new DataTable(line.split(","));
-            //Reading the rest of the data
-            line = csvReader.readLine();
-            while (line != null) {
-                if (data.add(line.split(",")) == -1) {
-                    throw new IOException();
-                }
-                line = csvReader.readLine();
-            }
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(ID3Algorithm.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
-            Logger.getLogger(ID3Algorithm.class.getName()).log(Level.SEVERE, null, ex);
+        Node varianceImpurityRootNode = executeAlgorithmForVarianceImpurityHeuristic(trainingData, attributes);
+        if (toPrint) {
+            System.out.println("Decision Tree using Variance Impurity heuristic (Without Pruning)=============================>");
+            displayTree(varianceImpurityRootNode, 0);
         }
-
-        int l = 100, k = 100;
-        System.out.println("Executing pruning for gain tree");
-        Node gainHeuristicRootNodeBest = executePostPruning(l, k, gainHeuristicRootNode, data);
-        System.out.println("Executing pruning for variance impurity tree");
-        Node varianceImpurityRootNodeBest = executePostPruning(l, k, varianceImpurityRootNode, data);
-
-//        System.out.println("Tree after post pruning");
-//        displayTree(rootNodeBest, 0);
-        try {
-            //Reading from the CSV File
-            BufferedReader csvReader = new BufferedReader(new FileReader(new File(currentDirectory + "/" + dataset1TestDataFileName)));
-            //Reading the attribute Names
-            String line = csvReader.readLine();
-            data = new DataTable(line.split(","));
-            //Reading the rest of the data
-            line = csvReader.readLine();
-            while (line != null) {
-                if (data.add(line.split(",")) == -1) {
-                    throw new IOException();
-                }
-                line = csvReader.readLine();
-            }
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(ID3Algorithm.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
-            Logger.getLogger(ID3Algorithm.class.getName()).log(Level.SEVERE, null, ex);
+        System.out.println("Executing pruning for decision tree created using Variance Impurity heuristic");
+        Node varianceImpurityRootNodeBest = executePostPruning(l, k, varianceImpurityRootNode, validationData);
+        if (toPrint) {
+            System.out.println("Decision Tree using Variance Impurity heuristic (After pruning)=============================>");
+            displayTree(varianceImpurityRootNodeBest, 0);
         }
-        double gainHeuristicAccuracyBeforePruning = getTreeAccuracy(gainHeuristicRootNode, data);
-        System.out.println("Accuracy of the Gain Heuristic tree before pruning for test data is====>" + gainHeuristicAccuracyBeforePruning);
-        double gainHeuristicAccuracyAfterPruning = getTreeAccuracy(gainHeuristicRootNodeBest, data);
-        System.out.println("Accuracy of the Gain Heuristic pruned tree for test data is====>" + gainHeuristicAccuracyAfterPruning);
-
-        double varianceImpurityAccuracyBeforePruning = getTreeAccuracy(varianceImpurityRootNode, data);
-        System.out.println("Accuracy of the Variance Impurity Heuristic tree before pruning for test data is====>" + varianceImpurityAccuracyBeforePruning);
-        double varianceImpurityAccuracyAfterPruning = getTreeAccuracy(varianceImpurityRootNodeBest, data);
-        System.out.println("Accuracy of the Variance Impurity Heuristic pruned tree for test data is====>" + varianceImpurityAccuracyAfterPruning);
-
+        double varianceImpurityAccuracyBeforePruning = getTreeAccuracy(varianceImpurityRootNode, testingData);
+        System.out.println("Accuracy of the decision tree created using Variance Impurity heuristic before pruning for test data is====>" + varianceImpurityAccuracyBeforePruning);
+        double varianceImpurityAccuracyAfterPruning = getTreeAccuracy(varianceImpurityRootNodeBest, testingData);
+        System.out.println("Accuracy of the decision tree created using Variance Impurity heuristic after pruning for test data is====>" + varianceImpurityAccuracyAfterPruning);
     }
 
     public static Node executePostPruning(int l, int k, Node rootNode, DataTable data) {
         Node dBest = rootNode;
         double dBestAccuracy = 0;
-
         Random random = new Random();
         for (int i = 1; i <= l; i++) {
             dBestAccuracy = getTreeAccuracy(dBest, data);
@@ -157,26 +189,19 @@ public class ID3Algorithm {
             }
             double dDashAccuracy = getTreeAccuracy(dDash, data);
             if (dDashAccuracy > dBestAccuracy) {
-//                System.out.println("D' accuracy = "+dDashAccuracy);
-//                System.out.println("DBest accuracy = "+dBestAccuracy);
                 dBest = dDash;
-//                System.out.println("D' has better accuracy. Accuracy on the validation set= " + dDashAccuracy);
             }
         }
         return dBest;
     }
 
     public static Node executeAlgorithmForGainHeuristic(DataTable data, ArrayList<String> attributes) {
-
-//        System.out.println("Hello");
         Node node = null;
-
         ArrayList<String> attributeList = new ArrayList<>();
         for (String attribute : attributes) {
             attributeList.add(attribute);
         }
 
-        //If data contains all positive then return new node with positive label or negative accordingly
         ArrayList<ArrayList<String>> records = data.getRecords();
         int positiveCount = 0, negativeCount = 0;
         for (ArrayList<String> record : records) {
@@ -213,14 +238,11 @@ public class ID3Algorithm {
 
         //Calculating gain for all the attributes not in the arrtibute list
         double entropy = data.calculateEntropy();
-//        System.out.println("Entropy = "+entropy);
 
-//        System.out.println(entropy);
         //Calculate information gain for each attribute
         double s = data.getRecords().size();
         HashMap<String, Double> gains = new HashMap<>();
         for (String attribute : attributeList) {
-//            System.out.println("Attribute========================>"+attribute);
             ArrayList<String> values = data.getAttributeValues(attribute);
             double gain = entropy;
             for (String value : values) {
@@ -234,17 +256,11 @@ public class ID3Algorithm {
                 }
 
                 double svEntropy = svData.calculateEntropy();
-//                System.out.println("SVEntropy====>"+svEntropy);
-
-//                System.out.println("sv/s===>"+(sv/s));
-//                System.out.println("*entropy==>"+((sv/s)*svEntropy));
                 gain = gain - ((sv / s) * svEntropy);
-//                svData.displayTable();
             }
             gains.put(attribute, gain);
         }
 
-//        System.out.println(gains);
         //Check which attribute has the highest gain
         double maxGain = Double.MIN_VALUE;
         String maxAttribute = null;
@@ -254,8 +270,6 @@ public class ID3Algorithm {
                 maxAttribute = gainEntry.getKey();
             }
         }
-        
-//        System.out.println("Max Gain===>"+maxGain);
 
         if (maxAttribute == null) {
             if (positiveCount > negativeCount) {
@@ -302,14 +316,11 @@ public class ID3Algorithm {
 
         }
 
-//        System.out.println(gains);
         return node;
     }
 
     public static Node executeAlgorithmForVarianceImpurityHeuristic(DataTable data, ArrayList<String> attributes) {
-
         Node node = null;
-
         ArrayList<String> attributeList = new ArrayList<>();
         for (String attribute : attributes) {
             attributeList.add(attribute);
@@ -353,14 +364,10 @@ public class ID3Algorithm {
         //Calculating the variance impurity for the data
         double varianceImpurity = data.calculateVarianceImpurity();
 
-//        //Calculating gain for all the attributes not in the arrtibute list
-//        double entropy = data.calculateEntropy();
-//        System.out.println(entropy);
         //Calculate information gain for each attribute
         double s = data.getRecords().size();
         HashMap<String, Double> gains = new HashMap<>();
         for (String attribute : attributeList) {
-//            System.out.println("Attribute========================>"+attribute);
             ArrayList<String> values = data.getAttributeValues(attribute);
             double gain = varianceImpurity;
             for (String value : values) {
@@ -374,17 +381,11 @@ public class ID3Algorithm {
                 }
 
                 double svVarianceImpurity = svData.calculateVarianceImpurity();
-//                System.out.println("SVEntropy====>"+svEntropy);
-
-//                System.out.println("sv/s===>"+(sv/s));
-//                System.out.println("*entropy==>"+((sv/s)*svEntropy));
                 gain = gain - ((sv / s) * svVarianceImpurity);
-//                svData.displayTable();
             }
             gains.put(attribute, gain);
         }
 
-//        System.out.println(gains);
         //Check which attribute has the highest gain
         double maxGain = Double.MIN_VALUE;
         String maxAttribute = null;
@@ -449,7 +450,9 @@ public class ID3Algorithm {
             System.out.println(" " + node.getLabel());
             return;
         } else {
-            System.out.println("");
+            if (level != 0) {
+                System.out.println("");
+            }
         }
 
         for (Link link : node.getChildLinks()) {
@@ -501,8 +504,6 @@ public class ID3Algorithm {
         }
         Node nodeToBeReplacedParent = findNodeParent(rootNode, nodeToBeReplaced);
 
-//        System.out.println("Node to be replaced ==>  " + nodeToBeReplaced.getAttributeName() + " number ==>" + nodeToBeReplaced.getNumber());
-//        System.out.println("Parent of node to be replaced ==>  " + nodeToBeReplacedParent.getAttributeName() + " number ==>" + nodeToBeReplacedParent.getNumber());
         for (Link link : nodeToBeReplacedParent.getChildLinks()) {
             if (link.getChildNode() == nodeToBeReplaced) {
                 //Replace with leaf node of most repeating
@@ -581,7 +582,6 @@ public class ID3Algorithm {
     public static double getTreeAccuracy(Node rootNode, DataTable data) {
         double correctlyClassifiedExamples = 0;
         for (ArrayList<String> record : data.getRecords()) {
-//            System.out.println("Checking for record = "+record);
             Node node = rootNode;
             while (node != null) {
                 if (node.getChildLinks().isEmpty()) {
@@ -592,13 +592,10 @@ public class ID3Algorithm {
                     }
                     break;
                 }
-//                System.out.println("Checking for node = "+node.getAttributeName());
                 String attributeName = node.getAttributeName();
                 String recordValue = record.get(data.getAttributeNames().indexOf(attributeName));
-//                System.out.println("Record Value = "+recordValue);
                 for (Link link : node.getChildLinks()) {
                     if (link.getAttributeValue().equals(recordValue)) {
-//                        System.out.println("Found a match");
                         node = link.getChildNode();
                     }
                 }
